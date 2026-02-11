@@ -9,10 +9,12 @@ services:
     image: postgres:15
     volumes:
       - kestra_postgres_data:/var/lib/postgresql
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: kestra
-      POSTGRES_USER: kestra
-      POSTGRES_PASSWORD: k3str4
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 30s
@@ -30,19 +32,21 @@ services:
       - /tmp/kestra-wd:/tmp/kestra-wd
       - ./data:/app/data
       - ./flows:/app/flows
+    env_file:
+      - .env
     environment:
       KESTRA_CONFIGURATION: |
         datasources:
           postgres:
-            url: jdbc:postgresql://kestra_postgres:5432/kestra
+            url: jdbc:postgresql://kestra_postgres:5432/${POSTGRES_DB:?POSTGRES_DB is required}
             driverClassName: org.postgresql.Driver
-            username: kestra
-            password: k3str4
+            username: ${POSTGRES_USER:?POSTGRES_USER is required}
+            password: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
         kestra:
           server:
             basicAuth:
-              username: "admin@kestra.io"
-              password: "Admin1234"
+              username: "${KESTRA_BASIC_AUTH_USERNAME:?KESTRA_BASIC_AUTH_USERNAME is required}"
+              password: "${KESTRA_BASIC_AUTH_PASSWORD:?KESTRA_BASIC_AUTH_PASSWORD is required}"
           repository:
             type: postgres
           storage:
