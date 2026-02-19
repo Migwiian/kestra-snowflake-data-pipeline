@@ -1,0 +1,30 @@
+id: olist_download
+namespace: olist
+
+description: |
+  Downloads the Olist e-commerce dataset from Kaggle.
+  Uses Base64-encoded secrets and Kestra internal storage.
+
+tasks:
+  - id: announce_start
+    type: io.kestra.plugin.core.log.Log
+    message: "Starting download from Kaggle..."
+
+  - id: download_dataset
+    type: io.kestra.plugin.scripts.shell.Commands
+    containerImage: kestra/kestra:v1.1-kaggle
+    env:
+      KAGGLE_USERNAME: "{{ secret('KAGGLE_USERNAME') }}"
+      KAGGLE_KEY: "{{ secret('KAGGLE_KEY') }}"
+    commands:
+      # 1. Create a landing directory in the temporary container
+      - "mkdir -p landing"
+      # 2. Download and unzip
+      - "kaggle datasets download -d olistbr/brazilian-ecommerce -p landing --unzip"
+    outputFiles:
+      # 3. Capture all unzipped CSVs into Kestra's internal storage
+      - "landing/**"
+
+  - id: announce_end
+    type: io.kestra.plugin.core.log.Log
+    message: "Download complete. Files are now in Kestra internal storage."
