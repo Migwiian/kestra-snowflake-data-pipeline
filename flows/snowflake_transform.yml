@@ -1,0 +1,46 @@
+id: snowflake_transform
+namespace: olist
+
+# =============================================================================
+# DESCRIPTION: Olist Data Transformation
+# STRATEGY: In-warehouse SQL Transformation
+# PURPOSE: Cleans raw strings into typed data and creates a flattened
+#          'fact_sales' table for analysis.
+# =============================================================================
+
+description: Transform raw Olist data into analytical models.
+
+tasks:
+  - id: create_analytical_views
+    type: io.kestra.plugin.jdbc.snowflake.Query
+    url: >-
+      jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}&MULTI_STATEMENT_COUNT=0
+    username: "{{ secret('SNOWFLAKE_USER') }}"
+    password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+    sql: |
+      -- 1. Create a Cleaned Orders Table with proper Timestamps
+      CREATE OR REPLACE TABLE olist_orders_cleaned AS
+      SELECT
+          order_id,
+          customer_id,
+          order_status,
+          TO_TIMESTAMP(order_purchase_timestamp) AS purchase_at,
+          TO_TIMESTAMP(order_delivered_customer_date) AS delivered_at
+      FROM olist_orders;
+
+      -- 2. Create the Master Fact Table (The "Gold" Layer)
+      CREATE OR REPLACE TABLE fact_sales AS
+      SELECT
+          o.order_id,
+          o.purchase_at,
+          c.customer_city,
+          c.customer_state,
+          p.payment_type,
+          CAST(p.payment_value AS FLOAT) AS total_order_value
+      FROM olist_orders_cleaned o
+      JOIN olist_customers c ON o.customer_id = c.customer_id
+      JOIN olist_order_payments p ON o.order_id = p.order_id;
+
+  - id: log_completion
+    type: io.kestra.plugin.core.log.Log
+    message: "Transformation Complete: Analytical models are ready in Snowflake."

@@ -1,0 +1,30 @@
+id: olist_pipeline
+namespace: olist
+
+description: Orchestrate Olist download, Snowflake load, and transform flows.
+
+tasks:
+  - id: download
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: olist
+    flowId: olist_download
+    wait: true
+
+  - id: get_file_map
+    type: io.kestra.plugin.core.kv.Get
+    key: olist_file_map
+    errorOnMissing: true
+
+  - id: load
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: olist
+    flowId: snowflake_loader
+    wait: true
+    inputs:
+      file_map: "{{ outputs.get_file_map.value }}"
+
+  - id: transform
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: olist
+    flowId: snowflake_transform
+    wait: true

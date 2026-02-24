@@ -1,0 +1,256 @@
+id: snowflake_loader
+namespace: olist
+
+description: Create Snowflake objects and load data using the Stage-and-Copy pattern.
+
+inputs:
+  - id: file_map
+    type: JSON
+
+tasks:
+  - id: create_staging_objects
+    type: io.kestra.plugin.jdbc.snowflake.Query
+    url: >-
+      jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}&MULTI_STATEMENT_COUNT=0
+    username: "{{ secret('SNOWFLAKE_USER') }}"
+    password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+    sql: |
+      CREATE SCHEMA IF NOT EXISTS {{ secret('SNOWFLAKE_SCHEMA') }};
+
+      CREATE OR REPLACE FILE FORMAT olist_csv_ff
+        TYPE = 'CSV'
+        FIELD_DELIMITER = ','
+        SKIP_HEADER = 1
+        FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+        NULL_IF = ('', 'NULL');
+
+      CREATE STAGE IF NOT EXISTS olist_stage FILE_FORMAT = olist_csv_ff;
+
+      CREATE TABLE IF NOT EXISTS olist_customers (customer_id STRING, customer_unique_id STRING, customer_zip_code_prefix STRING, customer_city STRING, customer_state STRING);
+      CREATE TABLE IF NOT EXISTS olist_geolocation (geolocation_zip_code_prefix STRING, geolocation_lat STRING, geolocation_lng STRING, geolocation_city STRING, geolocation_state STRING);
+      CREATE TABLE IF NOT EXISTS olist_order_items (order_id STRING, order_item_id STRING, product_id STRING, seller_id STRING, shipping_limit_date STRING, price STRING, freight_value STRING);
+      CREATE TABLE IF NOT EXISTS olist_order_payments (order_id STRING, payment_sequential STRING, payment_type STRING, payment_installments STRING, payment_value STRING);
+      CREATE TABLE IF NOT EXISTS olist_order_reviews (review_id STRING, order_id STRING, review_score STRING, review_comment_title STRING, review_comment_message STRING, review_creation_date STRING, review_answer_timestamp STRING);
+      CREATE TABLE IF NOT EXISTS olist_orders (order_id STRING, customer_id STRING, order_status STRING, order_purchase_timestamp STRING, order_approved_at STRING, order_delivered_carrier_date STRING, order_delivered_customer_date STRING, order_estimated_delivery_date STRING);
+      CREATE TABLE IF NOT EXISTS olist_products (product_id STRING, product_category_name STRING, product_name_lenght STRING, product_description_lenght STRING, product_photos_qty STRING, product_weight_g STRING, product_length_cm STRING, product_height_cm STRING, product_width_cm STRING);
+      CREATE TABLE IF NOT EXISTS olist_sellers (seller_id STRING, seller_zip_code_prefix STRING, seller_city STRING, seller_state STRING);
+      CREATE TABLE IF NOT EXISTS product_category_name_translation (product_category_name STRING, product_category_name_english STRING);
+
+  - id: load_all_files
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ inputs.file_map | keys }}"
+    tasks:
+      - id: route_file
+        type: io.kestra.plugin.core.flow.Switch
+        value: "{{ taskrun.value }}"
+        cases:
+          landing/olist_customers_dataset.csv:
+            - id: upload_customers
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_customers
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_customers
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_geolocation_dataset.csv:
+            - id: upload_geolocation
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_geolocation
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_geolocation
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_order_items_dataset.csv:
+            - id: upload_order_items
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_order_items
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_order_items
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_order_payments_dataset.csv:
+            - id: upload_order_payments
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_order_payments
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_order_payments
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_order_reviews_dataset.csv:
+            - id: upload_order_reviews
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_order_reviews
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_order_reviews
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_orders_dataset.csv:
+            - id: upload_orders
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_orders
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_orders
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_products_dataset.csv:
+            - id: upload_products
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_products
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_products
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/olist_sellers_dataset.csv:
+            - id: upload_sellers
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_sellers
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO olist_sellers
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+          landing/product_category_name_translation.csv:
+            - id: upload_category_translation
+              type: io.kestra.plugin.jdbc.snowflake.Upload
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              from: "{{ inputs.file_map[parent.taskrun.value] }}"
+              stageName: "@olist_stage"
+              prefix: "/"
+              fileName: "{{ parent.taskrun.value }}"
+            - id: copy_category_translation
+              type: io.kestra.plugin.jdbc.snowflake.Query
+              url: >-
+                jdbc:snowflake://{{ secret('SNOWFLAKE_ACCOUNT') }}.snowflakecomputing.com/?warehouse={{ secret('SNOWFLAKE_WAREHOUSE') }}&db={{ secret('SNOWFLAKE_DATABASE') }}&schema={{ secret('SNOWFLAKE_SCHEMA') }}&role={{ secret('SNOWFLAKE_ROLE') }}
+              username: "{{ secret('SNOWFLAKE_USER') }}"
+              password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
+              sql: |
+                COPY INTO product_category_name_translation
+                FROM @olist_stage/{{ parent.taskrun.value }}
+                FILE_FORMAT = (FORMAT_NAME = olist_csv_ff)
+                ON_ERROR = 'CONTINUE';
+
+  - id: log_completion
+    type: io.kestra.plugin.core.log.Log
+    message: "Data Load Complete."
