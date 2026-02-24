@@ -6,14 +6,24 @@ __pycache__/
 
 # Secrets
 .env
+secrets.conf
+.env_encoded
 kaggle.json
 
-# Data / Database
-*.duckdb
-data/landing/*.csv
-data/warehouse/*
-!data/warehouse/.gitkeep
+
+# Data files (downloaded by Kestra)
+data/olist/*.csv
+data/olist/*.zip
+data/geospatial/*.csv
+data/geospatial/*.zip
+
+# files
+project.md
 
 # IDE
 .zed/
 .vscode/
+.idea/
+
+# Logs
+*.log

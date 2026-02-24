@@ -1,3 +1,5 @@
+version: "3.8"
+
 volumes:
   kestra_postgres_data:
     driver: local
@@ -5,6 +7,7 @@ volumes:
     driver: local
 
 services:
+  # DATABASE: Metadata storage for Kestra flows, states, and executions
   kestra_postgres:
     image: postgres:15
     volumes:
@@ -21,16 +24,17 @@ services:
       timeout: 10s
       retries: 10
 
+  # ORCHESTRATOR: The core Kestra engine and Web UI
   kestra:
-    image: kestra/kestra:v1.1
+    build: .
+    image: kestra/kestra:v1.1-kaggle
     pull_policy: always
     user: "root"
     command: server standalone
     volumes:
       - kestra_data:/app/storage
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock # Allows Kestra to launch task containers
       - /tmp/kestra-wd:/tmp/kestra-wd
-      - ./data:/app/data
       - ./flows:/app/flows
     env_file:
       - .env
@@ -48,7 +52,9 @@ services:
               username: "${KESTRA_BASIC_AUTH_USERNAME:?KESTRA_BASIC_AUTH_USERNAME is required}"
               password: "${KESTRA_BASIC_AUTH_PASSWORD:?KESTRA_BASIC_AUTH_PASSWORD is required}"
           repository:
-            type: postgres
+            type: local
+            local:
+              basePath: "/app/flows"
           storage:
             type: local
             local:
@@ -59,17 +65,7 @@ services:
             tmpDir:
               path: /tmp/kestra-wd/tmp
           url: http://localhost:8080/
-      # Snowflake credentials
-      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
-      SNOWFLAKE_USER: ${SNOWFLAKE_USER}
-      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
-      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE}
-      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
-      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE}
-      SNOWFLAKE_ROLE: ${SNOWFLAKE_ROLE}
-      # Kaggle credentials
-      KAGGLE_USERNAME: ${KAGGLE_USERNAME}
-      KAGGLE_KEY: ${KAGGLE_KEY}
+
     ports:
       - "8080:8080"
       - "8081:8081"
