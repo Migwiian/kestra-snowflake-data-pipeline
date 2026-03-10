@@ -1,0 +1,27 @@
+id: olist_lake
+namespace: olist
+
+description: Copy raw Olist CSVs from Kestra internal storage to the MinIO data lake.
+
+inputs:
+  - id: file_map
+    type: JSON
+
+tasks:
+  - id: upload_all_files
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ inputs.file_map | keys }}"
+    tasks:
+      - id: upload_file
+        type: io.kestra.plugin.aws.s3.Upload
+        accessKeyId: "{{ secret('MINIO_ACCESS_KEY') }}"
+        secretKeyId: "{{ secret('MINIO_SECRET_KEY') }}"
+        region: "{{ secret('MINIO_REGION') }}"
+        endpointOverride: "{{ secret('MINIO_ENDPOINT') }}"
+        bucket: "{{ secret('MINIO_BUCKET') }}"
+        key: "olist/raw/{{ taskrun.value }}"
+        from: "{{ inputs.file_map[taskrun.value] }}"
+
+  - id: log_completion
+    type: io.kestra.plugin.core.log.Log
+    message: "Data Lake Copy Complete."

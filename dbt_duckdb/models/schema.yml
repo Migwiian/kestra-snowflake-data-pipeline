@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_olist_orders
+    description: "Staging orders from local CSVs."
+  - name: stg_olist_customers
+    description: "Staging customers from local CSVs."
+  - name: stg_olist_order_payments
+    description: "Staging payments from local CSVs."
+  - name: stg_olist_order_items
+    description: "Staging items from local CSVs."
+  - name: powerbi_dataset
+    description: "Power BI-ready order-level dataset with revenue, delivery, and geography features (DuckDB)."
+    columns:
+      - name: order_id
+        description: "Unique order identifier."
+      - name: purchase_at
+        description: "Order purchase timestamp."
+      - name: payment_value_total
+        description: "Total payment value for the order."
+      - name: delivery_days
+        description: "Days between purchase and delivery."
+      - name: delivery_delay_days
+        description: "Days late (positive) or early (negative) vs estimated delivery."

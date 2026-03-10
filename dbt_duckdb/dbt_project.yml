@@ -1,0 +1,17 @@
+name: "olist_duckdb"
+version: "1.0.0"
+config-version: 2
+
+profile: "olist_duckdb"
+
+model-paths: ["models"]
+analysis-paths: ["analysis"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+models:
+  olist_duckdb:
+    staging:
+      materialized: view
+    marts:
+      materialized: table

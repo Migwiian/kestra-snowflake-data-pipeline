@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: olist_orders_cleaned
+    description: "Orders with cleaned timestamps for analytics."
+    columns:
+      - name: order_id
+        description: "Unique order identifier."
+      - name: purchase_at
+        description: "Order purchase timestamp."
+
+  - name: fact_sales
+    description: "Fact table for revenue analysis." 
+    columns:
+      - name: order_id
+        description: "Unique order identifier."
+      - name: total_order_value
+        description: "Total payment value for the order."
+
+  - name: powerbi_dataset
+    description: "Power BI-ready order-level dataset with revenue, delivery, and geography features."
+    columns:
+      - name: order_id
+        description: "Unique order identifier."
+      - name: purchase_at
+        description: "Order purchase timestamp."
+      - name: payment_value_total
+        description: "Total payment value for the order."
+      - name: delivery_days
+        description: "Days between purchase and delivery."
+      - name: delivery_delay_days
+        description: "Days late (positive) or early (negative) vs estimated delivery."

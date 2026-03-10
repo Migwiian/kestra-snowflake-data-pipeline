@@ -1,0 +1,31 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="700" fill="#f6f1e7"/>
+  <rect x="40" y="30" width="1120" height="640" rx="18" fill="#ffffff" stroke="#2b2b2b" stroke-width="2"/>
+  <text x="70" y="80" font-family="Arial, sans-serif" font-size="28" fill="#222222">Olist Revenue Dashboard (Sample)</text>
+  <text x="70" y="110" font-family="Arial, sans-serif" font-size="14" fill="#666666">Two key tiles: revenue by payment type and monthly revenue trend</text>
+
+  <rect x="70" y="150" width="520" height="480" rx="14" fill="#fff7ee" stroke="#2b2b2b" stroke-width="1.5"/>
+  <text x="90" y="185" font-family="Arial, sans-serif" font-size="18" fill="#222222">Revenue by Payment Type</text>
+  <rect x="110" y="230" width="380" height="24" fill="#2f6f4e"/>
+  <rect x="110" y="275" width="320" height="24" fill="#2f6f4e"/>
+  <rect x="110" y="320" width="260" height="24" fill="#2f6f4e"/>
+  <rect x="110" y="365" width="210" height="24" fill="#2f6f4e"/>
+  <rect x="110" y="410" width="170" height="24" fill="#2f6f4e"/>
+  <rect x="110" y="455" width="140" height="24" fill="#2f6f4e"/>
+
+  <text x="500" y="248" font-family="Arial, sans-serif" font-size="12" fill="#444444">credit_card</text>
+  <text x="450" y="293" font-family="Arial, sans-serif" font-size="12" fill="#444444">boleto</text>
+  <text x="400" y="338" font-family="Arial, sans-serif" font-size="12" fill="#444444">voucher</text>
+  <text x="360" y="383" font-family="Arial, sans-serif" font-size="12" fill="#444444">debit_card</text>
+  <text x="330" y="428" font-family="Arial, sans-serif" font-size="12" fill="#444444">not_defined</text>
+  <text x="300" y="473" font-family="Arial, sans-serif" font-size="12" fill="#444444">unknown</text>
+
+  <rect x="610" y="150" width="520" height="480" rx="14" fill="#f0f6ff" stroke="#2b2b2b" stroke-width="1.5"/>
+  <text x="630" y="185" font-family="Arial, sans-serif" font-size="18" fill="#222222">Monthly Revenue</text>
+  <polyline fill="none" stroke="#1b4f8f" stroke-width="3"
+            points="650,540 700,520 750,500 800,470 850,480 900,430 950,420 1000,390 1050,360"/>
+  <line x1="650" y1="560" x2="1050" y2="560" stroke="#999999" stroke-width="1"/>
+  <line x1="650" y1="560" x2="650" y2="220" stroke="#999999" stroke-width="1"/>
+  <text x="650" y="590" font-family="Arial, sans-serif" font-size="12" fill="#666666">2017-01</text>
+  <text x="995" y="590" font-family="Arial, sans-serif" font-size="12" fill="#666666">2018-08</text>
+</svg>

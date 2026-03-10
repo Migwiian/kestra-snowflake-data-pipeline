@@ -16,6 +16,13 @@ data/olist/*.csv
 data/olist/*.zip
 data/geospatial/*.csv
 data/geospatial/*.zip
+data/warehouse/
+
+# dbt artifacts
+dbt/target/
+dbt_duckdb/target/
+dbt/**/.user.yml
+dbt_duckdb/.user.yml
 
 # files
 project.md
