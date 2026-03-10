@@ -17,6 +17,7 @@ data/olist/*.zip
 data/geospatial/*.csv
 data/geospatial/*.zip
 data/warehouse/
+docs/notes.md
 
 # dbt artifacts
 dbt/target/

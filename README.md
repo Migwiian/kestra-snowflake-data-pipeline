@@ -1,29 +1,14 @@
 # Kestra Snowflake Olist Pipeline
 
-This project delivers an end-to-end, orchestration-first data pipeline using Kestra to ingest the Olist e-commerce dataset from Kaggle and load it into Snowflake. The primary objective is to demonstrate a production-ready data lifecycle—moving from raw, denormalized landing zones to structured analytical views within a cloud data warehouse. The repository demonstrates production-minded data engineering practices: explicit orchestration, separable staging and transformation layers, containerized execution, and predictable environment management.
+## Executive Summary: Retail Revenue Optimization
+**Business Problem:** A Brazilian e-commerce marketplace (Olist) needs to understand how payment methods and delivery delays impact revenue realization to optimize cash flow and customer retention.
 
-## Problem Statement
-Build a reproducible data pipeline that enables analysis of order revenue and delivery outcomes in the Olist e-commerce dataset, with a focus on how payment types and delivery timing correlate with revenue over time.
+**Solution:** An automated, production-grade data pipeline that transforms raw Kaggle data into a Snowflake analytics layer. Stakeholders can track monthly revenue trends and relate delivery performance to financial outcomes.
 
-## Success Metrics
-- Monthly revenue trend (orders and total payment value over time).
-- Revenue distribution by payment type.
-- Delivery outcome rate (delivered vs. other statuses) and its impact on revenue.
-
-## What This Pipeline Does
-1. Downloads and unzips the Olist dataset via the Kaggle CLI.
-2. Uploads all CSVs to Snowflake staging and loads them with the stage-and-copy pattern.
-3. Builds curated analytical tables in Snowflake for downstream analysis.
-4. Orchestrates the workflow as a single, repeatable pipeline.
-
-## Architecture and Design Highlights
-- Orchestration-first design with independent, composable flows.
-- Clear separation between ingestion (staging tables) and transformation (analytics tables).
-- Explicit Snowflake object creation, file formats, and load commands for repeatability.
-- Containerized execution with a custom Kestra image that includes the Kaggle CLI.
-- Secret management aligned to Kestra's `secret('...')` resolver.
-- Pipeline designed for transparency and easy debugging in the Kestra UI.
-- Idempotency-aware design: Snowflake load logic is structured to support schema checks and table truncation/merge strategies so repeated runs can converge on a consistent state.
+**Key Deliverables:**
+- Automated ETL from Kaggle to Snowflake using Kestra.
+- Analytics warehouse with Raw → Staging → Fact/Dim layers and clustered `fact_sales` for time-series performance.
+- Streamlit dashboard for monthly revenue trends and payment-type distribution.
 
 ## Repository Layout
 - `flows/olist_download.yml`: Downloads dataset and stores files in Kestra internal storage.
@@ -34,7 +19,7 @@ Build a reproducible data pipeline that enables analysis of order revenue and de
 - `docker-compose.yml`: Runs Kestra and Postgres with local storage mounts.
 - `Dockerfile`: Extends `kestra/kestra` with Python and Kaggle CLI.
 - `dbt/`: Optional dbt project that mirrors the transformation logic.
-- `dbt_duckdb/`: Parallel dbt project for Power BI using DuckDB + local CSVs.
+- `dbt_duckdb/`: Parallel dbt project for Power BI using DuckDB + local CSVs (local track).
 - `secrets.conf`: Source-of-truth credentials (plain text, local only).
 - `.env`: Runtime configuration consumed by Docker/Kestra (plain text, local only).
 - `infra/terraform/`: Optional Terraform skeleton to provision a cloud data lake bucket.
@@ -67,8 +52,12 @@ Required environment variables (plain text in `.env` and mirrored as `SECRET_` f
 
 Access MinIO console at `http://localhost:9001`.
 
-## Optional dbt Transformations
-An optional dbt project lives in `dbt/`. The pipeline runs dbt by default (`use_dbt=true`) and uses the mounted project at `/app/dbt` with the same Snowflake secrets via environment variables.
+## dbt Tracks
+Two dbt tracks are available:
+- **Snowflake track:** `dbt/` (warehouse-native transformations; used by the Kestra flow when `use_dbt=true`).
+- **DuckDB track:** `dbt_duckdb/` (local analytics from CSVs; useful for Power BI and offline work).
+
+The Snowflake track runs inside the pipeline when `use_dbt=true` and uses the mounted project at `/app/dbt`.
 
 To disable dbt and run the in-warehouse SQL transforms instead, set `use_dbt=false` when executing the flow.
 
@@ -116,17 +105,16 @@ Both cover:
 
 Power BI can use Snowflake (dbt) or DuckDB (local) as the data source; see `dashboard/powerbi/README.md`.
 
-Sample screenshots:
-![Streamlit Dashboard](docs/dashboard.svg)
-![Power BI Dashboard](docs/powerbi_dashboard.svg)
-
 Run the Streamlit dashboard locally:
 ```bash
 pip install -r dashboard/requirements.txt
 streamlit run dashboard/streamlit_app.py
 ```
 
+## Project Impact
+By centralizing fragmented Kaggle CSVs into a structured Snowflake warehouse, this project reduces time-to-insight for retail stakeholders and enables consistent, repeatable revenue and delivery-performance analysis.
+
 ## Notes
 - The Kaggle CLI is installed in the Kestra container via the `Dockerfile`.
-- Kestra secrets are provided through environment variables prefixed with `SECRET_`.
+- Secrets are supplied as base64-encoded `SECRET_*` environment variables and resolved via `secret('...')`.
 - The pipeline is fully operational and can be extended with additional models and quality checks.
