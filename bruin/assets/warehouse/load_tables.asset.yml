@@ -1,0 +1,10 @@
+name: load_olist_tables
+owner: data-eng
+type: sql
+description: "Load Olist CSVs from the stage into Snowflake tables."
+depends_on:
+  - stage_olist_tables
+tags:
+  - warehouse
+  - ingestion
+schedule: "@daily"

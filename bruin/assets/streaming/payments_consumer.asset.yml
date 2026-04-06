@@ -1,0 +1,10 @@
+name: stream_payments_consumer
+owner: data-eng
+type: python
+description: "Kafka consumer that persists streamed payments to the lake."
+depends_on:
+  - stream_payments_producer
+tags:
+  - streaming
+  - kafka
+schedule: "@hourly"

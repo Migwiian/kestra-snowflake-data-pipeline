@@ -1,0 +1,11 @@
+name: ingest_olist_to_lake
+owner: data-eng
+type: python
+description: "Upload raw Olist CSVs to an S3-compatible data lake."
+depends_on:
+  - ingest_olist_kaggle
+tags:
+  - ingestion
+  - lake
+  - batch
+schedule: "@daily"

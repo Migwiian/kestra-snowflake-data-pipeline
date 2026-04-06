@@ -1,0 +1,29 @@
+name: kestra-snowflake-olist-bruin
+version: "1.0.0"
+description: "Bruin project that mirrors the Kestra -> Snowflake Olist pipeline."
+
+# Default execution environment for local development.
+default_environment: dev
+
+environments:
+  dev:
+    type: local
+    duckdb_path: data/dev.duckdb
+  prod:
+    type: snowflake
+    account: ${SNOWFLAKE_ACCOUNT}
+    user: ${SNOWFLAKE_USER}
+    password: ${SNOWFLAKE_PASSWORD}
+    role: ${SNOWFLAKE_ROLE}
+    warehouse: ${SNOWFLAKE_WAREHOUSE}
+    database: ${SNOWFLAKE_DATABASE}
+    schema: ${SNOWFLAKE_SCHEMA}
+
+connections:
+  lake:
+    type: s3
+    endpoint: ${LAKE_ENDPOINT}
+    bucket: ${LAKE_BUCKET}
+    access_key: ${LAKE_ACCESS_KEY}
+    secret_key: ${LAKE_SECRET_KEY}
+    region: ${LAKE_REGION}

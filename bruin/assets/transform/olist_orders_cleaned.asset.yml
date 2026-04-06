@@ -1,0 +1,10 @@
+name: transform_olist_orders_cleaned
+owner: analytics
+type: sql
+description: "Create cleaned orders table with typed timestamps."
+depends_on:
+  - load_olist_tables
+tags:
+  - transform
+  - silver
+schedule: "@daily"

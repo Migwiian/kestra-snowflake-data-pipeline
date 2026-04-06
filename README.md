@@ -118,3 +118,6 @@ By centralizing fragmented Kaggle CSVs into a structured Snowflake warehouse, th
 - The Kaggle CLI is installed in the Kestra container via the `Dockerfile`.
 - Secrets are supplied as base64-encoded `SECRET_*` environment variables and resolved via `secret('...')`.
 - The pipeline is fully operational and can be extended with additional models and quality checks.
+
+## Bruin Project
+A Bruin-based version of the pipeline is available in `bruin/` with batch and streaming assets plus evaluation notes. See `bruin/README.md` and `bruin/EVALUATION.md`.

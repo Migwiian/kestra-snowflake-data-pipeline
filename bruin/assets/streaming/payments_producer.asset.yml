@@ -1,0 +1,10 @@
+name: stream_payments_producer
+owner: data-eng
+type: python
+description: "Kafka producer that streams payment records."
+depends_on:
+  - ingest_olist_kaggle
+tags:
+  - streaming
+  - kafka
+schedule: "@hourly"

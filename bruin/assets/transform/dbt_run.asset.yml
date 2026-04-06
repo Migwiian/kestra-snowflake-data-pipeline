@@ -1,0 +1,10 @@
+name: transform_dbt_run
+owner: analytics
+type: python
+description: "Optional dbt run to build analytics models."
+depends_on:
+  - load_olist_tables
+tags:
+  - transform
+  - dbt
+schedule: "@daily"

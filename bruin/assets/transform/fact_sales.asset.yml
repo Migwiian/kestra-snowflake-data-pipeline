@@ -1,0 +1,11 @@
+name: transform_fact_sales
+owner: analytics
+type: sql
+description: "Create gold fact table for revenue analysis."
+depends_on:
+  - transform_olist_orders_cleaned
+tags:
+  - transform
+  - gold
+  - warehouse
+schedule: "@daily"

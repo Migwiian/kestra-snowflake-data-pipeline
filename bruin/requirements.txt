@@ -1,0 +1,5 @@
+boto3
+kaggle
+kafka-python
+snowflake-connector-python
+python-dotenv

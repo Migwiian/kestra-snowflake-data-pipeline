@@ -1,0 +1,10 @@
+name: stage_olist_tables
+owner: data-eng
+type: sql
+description: "Create Snowflake stage, file format, and raw tables."
+depends_on:
+  - ingest_olist_to_lake
+tags:
+  - warehouse
+  - staging
+schedule: "@daily"

@@ -1,0 +1,10 @@
+name: ingest_olist_kaggle
+owner: data-eng
+type: python
+description: "Download Olist dataset from Kaggle into the raw landing zone."
+depends_on: []
+tags:
+  - ingestion
+  - batch
+  - kaggle
+schedule: "@daily"
